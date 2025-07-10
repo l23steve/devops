@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from .docker_tools import DockerManager
 from .ai_agent import AIAgent
-
+from dotenv import load_dotenv
 app = FastAPI()
 app.mount(
     "/static",

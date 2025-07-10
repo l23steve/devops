@@ -3,3 +3,4 @@ uvicorn
 websockets
 docker
 openai
+python-dotenv
