@@ -46,7 +46,11 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            msg = json.loads(data)
+            try:
+                msg = json.loads(data)
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"type": "error", "content": "Invalid JSON"}))
+                continue
             if msg.get("type") == "chat_message":
                 user_msg = msg.get("content", "")
                 ai_response = ai_agent.chat(user_msg)

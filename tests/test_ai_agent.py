@@ -57,3 +57,21 @@ def test_ai_agent_chat_runs_command(monkeypatch):
     agent = AIAgent(dm, api_key='test')
     result = agent.chat('hi')
     assert result == 'done'
+
+
+def test_ai_agent_chat_handles_error(monkeypatch):
+    dm = DummyContainer()
+
+    class ErrorCompletions:
+        def create(self, **kwargs):
+            import openai
+            raise openai.APIConnectionError(message='fail', request=None)
+
+    class ErrorClient:
+        def __init__(self):
+            self.chat = type('chat', (), {'completions': ErrorCompletions()})
+
+    monkeypatch.setattr('openai.OpenAI', lambda api_key, base_url=None: ErrorClient())
+    agent = AIAgent(dm, api_key='test')
+    result = agent.chat('hi')
+    assert result.startswith('Error communicating with language model')

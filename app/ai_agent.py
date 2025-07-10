@@ -31,11 +31,14 @@ class AIAgent:
     def chat(self, user_message: str):
         self.messages.append({"role": "user", "content": user_message})
         while True:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo-0125",
-                messages=self.messages,
-                tools=[RUN_COMMAND_TOOL]
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo-0125",
+                    messages=self.messages,
+                    tools=[RUN_COMMAND_TOOL]
+                )
+            except openai.OpenAIError as exc:
+                return f"Error communicating with language model: {exc}"
             message = response.choices[0].message
             if message.tool_calls:
                 for call in message.tool_calls:
