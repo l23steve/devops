@@ -28,7 +28,7 @@ class AIAgent:
             }
         ]
 
-    def chat(self, user_message: str):
+    def chat(self, user_message: str, stream_callback=None):
         self.messages.append({"role": "user", "content": user_message})
         while True:
             try:
@@ -44,7 +44,9 @@ class AIAgent:
                 for call in message.tool_calls:
                     if call.function.name == "run_command":
                         args = json.loads(call.function.arguments)
-                        output = self.docker_manager.run_command(args["command"])
+                        output = self.docker_manager.run_command(
+                            args["command"], stream_callback=stream_callback
+                        )
                         self.messages.append({"role": "assistant", "tool_calls": message.tool_calls})
                         self.messages.append({
                             "role": "tool",

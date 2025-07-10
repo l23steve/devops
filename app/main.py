@@ -1,5 +1,6 @@
 import json
 import os
+import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -53,7 +54,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
             if msg.get("type") == "chat_message":
                 user_msg = msg.get("content", "")
-                ai_response = ai_agent.chat(user_msg)
-                await websocket.send_text(json.dumps({"type": "chat_message", "content": ai_response}))
+
+                def stream_cb(text: str):
+                    asyncio.create_task(
+                        websocket.send_text(json.dumps({"type": "terminal_data", "content": text}))
+                    )
+
+                ai_response = ai_agent.chat(user_msg, stream_callback=stream_cb)
+                await websocket.send_text(
+                    json.dumps({"type": "chat_message", "content": ai_response})
+                )
     except WebSocketDisconnect as wsd:
         print(f"WebSocket disconnected: {wsd}")
