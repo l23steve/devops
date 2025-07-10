@@ -24,7 +24,7 @@ class AIAgent:
         self.messages: List[Dict[str, str]] = [
             {
                 "role": "system",
-                "content": "You are a devops AI. Use run_command to execute commands in the container."
+                "content": "You are a devops AI. Use `run_command` to execute commands in the container. Run as many commands as needed to complete the task."
             }
         ]
 
