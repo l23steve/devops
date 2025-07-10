@@ -6,6 +6,9 @@
     <title>DevOps AI</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <style>
         /* Custom styles for chat bubbles and basic layout */
         body {
@@ -138,7 +141,7 @@
         <input type="text" id="chat-input" placeholder="Type a message..." class="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-b-lg">
     </div>
     <div id="terminal">
-        <pre id="terminal-log"></pre>
+        <pre><code id="terminal-log" class="language-bash"></code></pre>
     </div>
 </div>
 
@@ -147,6 +150,8 @@
     const chatInput = document.getElementById('chat-input');
     const chatLog = document.getElementById('chat-log');
     const terminalLog = document.getElementById('terminal-log');
+    let terminalContent = '';
+    hljs.highlightAll();
 
     // Function to append message to chat log
     function appendChatMessage(content, isUser) {
@@ -171,7 +176,8 @@
             appendChatMessage(msg.content, false);
         } else if (msg.type === 'terminal_data') {
             // Terminal data
-            terminalLog.textContent += msg.content;
+            terminalContent += msg.content;
+            terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
             terminalLog.scrollTop = terminalLog.scrollHeight; // Scroll to the bottom
         }
     };
