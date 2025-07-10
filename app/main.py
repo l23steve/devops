@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from .docker_tools import DockerManager
 from .ai_agent import AIAgent
 from dotenv import load_dotenv
+from app.internet_tools import WebSearchTool
 
 load_dotenv()
 
@@ -26,10 +27,12 @@ def startup_event():
     api_key = os.getenv("OPENROUTER_API_KEY", "test")
     try:
         docker_manager = DockerManager()
+        internet_tools = WebSearchTool(api_key=api_key)
     except Exception as exc:
         print(f"Failed to start docker container: {exc}")
         docker_manager = None
-    ai_agent = AIAgent(docker_manager, api_key)
+        internet_tools = None
+    ai_agent = AIAgent(docker_manager, internet_tools, api_key)
 
 @app.on_event("shutdown")
 def shutdown_event():
