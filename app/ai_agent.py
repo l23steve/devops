@@ -48,6 +48,7 @@ class AIAgent:
                         self.messages.append({"role": "assistant", "tool_calls": message.tool_calls})
                         self.messages.append({
                             "role": "tool",
+                            "tool_call_id": call.id,
                             "name": "run_command",
                             "content": output
                         })

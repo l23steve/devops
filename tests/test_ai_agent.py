@@ -44,6 +44,7 @@ class DummyMessage:
 
 class DummyToolCall:
     def __init__(self, command):
+        self.id = 'call-id'
         self.function = type('func', (), {'name': 'run_command', 'arguments': json.dumps({'command': command})})
 
 
@@ -57,6 +58,8 @@ def test_ai_agent_chat_runs_command(monkeypatch):
     agent = AIAgent(dm, api_key='test')
     result = agent.chat('hi')
     assert result == 'done'
+    tool_messages = [m for m in agent.messages if m.get('role') == 'tool']
+    assert tool_messages[0]['tool_call_id'] == 'call-id'
 
 
 def test_ai_agent_chat_handles_error(monkeypatch):
