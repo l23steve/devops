@@ -41,13 +41,14 @@ class AIAgent:
                 return f"Error communicating with language model: {exc}"
             message = response.choices[0].message
             if message.tool_calls:
+                self.messages.append({"role": "assistant", "tool_calls": message.tool_calls})
                 for call in message.tool_calls:
                     if call.function.name == "run_command":
                         args = json.loads(call.function.arguments)
-                        output = self.docker_manager.run_command(
-                            args["command"], stream_callback=stream_callback
-                        )
-                        self.messages.append({"role": "assistant", "tool_calls": message.tool_calls})
+                        output = self.docker_manager.run_command(args["command"])
+                        if stream_callback:
+                            prompt = f"ai@container:~$ {args['command']}\n"
+                            stream_callback(prompt + output)
                         self.messages.append({
                             "role": "tool",
                             "tool_call_id": call.id,

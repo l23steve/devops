@@ -4,8 +4,6 @@ from app.ai_agent import AIAgent, RUN_COMMAND_TOOL
 
 class DummyContainer:
     def run_command(self, command, stream_callback=None):
-        if stream_callback:
-            stream_callback('hello')
         return 'hello'
     def exec_run(self, command, tty=True):
         class Result:
@@ -67,7 +65,7 @@ def test_ai_agent_chat_runs_command(monkeypatch):
     assert result == 'done'
     tool_messages = [m for m in agent.messages if m.get('role') == 'tool']
     assert tool_messages[0]['tool_call_id'] == 'call-id'
-    assert captured == ['hello']
+    assert captured == ['ai@container:~$ echo hello\nhello']
 
 
 def test_ai_agent_chat_handles_error(monkeypatch):
