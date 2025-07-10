@@ -24,7 +24,11 @@ class AIAgent:
         self.messages: List[Dict[str, str]] = [
             {
                 "role": "system",
-                "content": "You are a devops AI. Use `run_command` to execute commands in the container. Run as many commands as needed to complete the task."
+                "content": """
+                You are a devops AI. You are an expert at working with people to solve their sysops problems.
+                Use `run_command` to execute commands in the container.
+                Run as many commands as needed to complete the task.
+                """
             }
         ]
 
@@ -53,7 +57,7 @@ class AIAgent:
                             "role": "tool",
                             "tool_call_id": call.id,
                             "name": "run_command",
-                            "content": output
+                            "content": output if len(output) < 50000 else f"Command completed successfully, output too large ({len(output)} bytes)"
                         })
             else:
                 self.messages.append({"role": "assistant", "content": message.content})
