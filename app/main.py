@@ -23,7 +23,6 @@ ai_agent = None
 def startup_event():
     global docker_manager, ai_agent
     api_key = os.getenv("OPENROUTER_API_KEY", "test")
-    print(api_key)
     try:
         docker_manager = DockerManager()
     except Exception as exc:
