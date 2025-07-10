@@ -55,5 +55,5 @@ async def websocket_endpoint(websocket: WebSocket):
                 user_msg = msg.get("content", "")
                 ai_response = ai_agent.chat(user_msg)
                 await websocket.send_text(json.dumps({"type": "chat_message", "content": ai_response}))
-    except WebSocketDisconnect:
-        pass
+    except WebSocketDisconnect as wsd:
+        print(f"WebSocket disconnected: {wsd}")

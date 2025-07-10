@@ -2,19 +2,210 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevOps AI</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for chat bubbles and basic layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: stretch;
+            background-color: #f3f4f6; /* Tailwind bg-gray-100 */
+        }
+
+        #container {
+            display: flex;
+            width: 100%;
+            height: 100vh; /* Ensure container takes full viewport height */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Tailwind shadow-lg */
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            overflow: hidden; /* Hide overflow for rounded corners */
+        }
+
+        #chat {
+            width: 40%;
+            border-right: 1px solid #e5e7eb; /* Tailwind border-gray-200 */
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff; /* Tailwind bg-white */
+            padding: 1rem; /* Tailwind p-4 */
+        }
+
+        #chat-log {
+            flex: 1;
+            padding: 0.5rem; /* Tailwind p-2 */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* Tailwind space-y-4 */
+            scroll-behavior: smooth;
+        }
+
+        .chat-message-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .chat-message {
+            max-width: 70%; /* Limit bubble width */
+            padding: 0.75rem 1rem; /* Tailwind p-3 */
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Tailwind shadow-sm */
+            word-wrap: break-word; /* Ensure long words break */
+        }
+
+        .user-message-container {
+            justify-content: flex-end; /* Align user messages to the right */
+        }
+
+        .user-message {
+            background-color: #3b82f6; /* Tailwind bg-blue-500 */
+            color: #ffffff; /* Tailwind text-white */
+        }
+
+        .ai-message-container {
+            justify-content: flex-start; /* Align AI messages to the left */
+        }
+
+        .ai-message {
+            background-color: #e5e7eb; /* Tailwind bg-gray-200 */
+            color: #1f2937; /* Tailwind text-gray-800 */
+        }
+
+        #chat-input {
+            border: none;
+            border-top: 1px solid #e5e7eb; /* Tailwind border-gray-200 */
+            padding: 1rem;
+            font-size: 1em;
+            width: 100%;
+            outline: none; /* Remove default focus outline */
+            border-radius: 0 0 0.5rem 0.5rem; /* Rounded bottom corners */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #chat-input:focus {
+            border-color: #3b82f6; /* Tailwind border-blue-500 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); /* Tailwind focus:ring-2 focus:ring-blue-500 */
+        }
+
+        #terminal {
+            width: 60%;
+            background-color: #1f2937; /* Dark background for terminal */
+            color: #34d399; /* Green text for terminal (Tailwind text-green-400) */
+            padding: 1rem;
+            overflow-y: auto;
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+        }
+
+        #terminal-log {
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            font-family: 'JetBrains Mono', 'Fira Code', monospace; /* Monospace font for terminal */
+            font-size: 0.875rem; /* Tailwind text-sm */
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #container {
+                flex-direction: column;
+                height: auto; /* Allow height to adjust on small screens */
+            }
+
+            #chat, #terminal {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+                border-radius: 0.5rem 0.5rem 0 0; /* Rounded top corners for chat */
+            }
+
+            #terminal {
+                border-radius: 0 0 0.5rem 0.5rem; /* Rounded bottom corners for terminal */
+            }
+        }
+    </style>
 </head>
 <body>
 <div id="container">
     <div id="chat">
-        <div id="chat-log"></div>
-        <input type="text" id="chat-input" placeholder="Type a message..." />
+        <div id="chat-log">
+            <!-- Chat messages will be appended here -->
+        </div>
+        <input type="text" id="chat-input" placeholder="Type a message..." class="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-b-lg">
     </div>
     <div id="terminal">
         <pre id="terminal-log"></pre>
     </div>
 </div>
-<script src="/static/app.js"></script>
+
+<script>
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+    const chatInput = document.getElementById('chat-input');
+    const chatLog = document.getElementById('chat-log');
+    const terminalLog = document.getElementById('terminal-log');
+
+    // Function to append message to chat log
+    function appendChatMessage(content, isUser) {
+        const messageContainer = document.createElement('div');
+        messageContainer.classList.add('chat-message-container');
+        messageContainer.classList.add(isUser ? 'user-message-container' : 'ai-message-container');
+
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('chat-message');
+        messageBubble.classList.add(isUser ? 'user-message' : 'ai-message');
+        messageBubble.textContent = content;
+
+        messageContainer.appendChild(messageBubble);
+        chatLog.appendChild(messageContainer);
+        chatLog.scrollTop = chatLog.scrollHeight; // Scroll to the bottom
+    }
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'chat_message') {
+            // AI messages received from WebSocket
+            appendChatMessage(msg.content, false);
+        } else if (msg.type === 'terminal_data') {
+            // Terminal data
+            terminalLog.textContent += msg.content;
+            terminalLog.scrollTop = terminalLog.scrollHeight; // Scroll to the bottom
+        }
+    };
+
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && chatInput.value.trim() !== '') {
+            const text = chatInput.value.trim();
+            // Display user message instantly
+            appendChatMessage(text, true);
+
+            // Send message via WebSocket
+            ws.send(JSON.stringify({ type: 'chat_message', content: text }));
+            chatInput.value = ''; // Clear input
+        }
+    });
+
+    // Handle WebSocket connection open and close
+    ws.onopen = () => {
+        console.log('WebSocket connection established.');
+        // Optional: Send an initial message or status
+        // appendChatMessage('Connected to DevOps AI.', false);
+    };
+
+    ws.onclose = () => {
+        console.log('WebSocket connection closed.');
+        // Optional: Display a message about disconnection
+        // appendChatMessage('Disconnected from DevOps AI. Please refresh to reconnect.', false);
+    };
+
+    ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        // Optional: Display an error message
+        // appendChatMessage('WebSocket error occurred. Check console for details.', false);
+    };
+</script>
 </body>
 </html>
