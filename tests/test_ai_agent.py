@@ -3,7 +3,9 @@ from unittest.mock import MagicMock
 from app.ai_agent import AIAgent, RUN_COMMAND_TOOL
 
 class DummyContainer:
-    def run_command(self, command):
+    def run_command(self, command, stream_callback=None):
+        if stream_callback:
+            stream_callback('hello')
         return 'hello'
     def exec_run(self, command, tty=True):
         class Result:
@@ -56,10 +58,16 @@ def test_ai_agent_chat_runs_command(monkeypatch):
     dummy_client = DummyOpenAI([response1, response2])
     monkeypatch.setattr('openai.OpenAI', lambda api_key, base_url=None: dummy_client)
     agent = AIAgent(dm, api_key='test')
-    result = agent.chat('hi')
+    captured = []
+
+    def cb(data):
+        captured.append(data)
+
+    result = agent.chat('hi', stream_callback=cb)
     assert result == 'done'
     tool_messages = [m for m in agent.messages if m.get('role') == 'tool']
     assert tool_messages[0]['tool_call_id'] == 'call-id'
+    assert captured == ['hello']
 
 
 def test_ai_agent_chat_handles_error(monkeypatch):

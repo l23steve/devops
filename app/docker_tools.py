@@ -5,12 +5,19 @@ class DockerManager:
         self.client = docker.from_env()
         self.container = self.client.containers.run(image, tty=True, detach=True)
 
-    def run_command(self, command: str) -> str:
-        """Run a command inside the container and return its output."""
+    def run_command(self, command: str, stream_callback=None) -> str:
+        """Run a command inside the container and return its output.
+
+        If ``stream_callback`` is provided, the decoded output is also passed to
+        the callback. This allows callers to forward command output while
+        retaining the return value for compatibility.
+        """
         exec_result = self.container.exec_run(command, tty=True)
         output = exec_result.output
         if isinstance(output, bytes):
-            return output.decode()
+            output = output.decode()
+        if stream_callback:
+            stream_callback(output)
         return output
 
     def stop(self):
