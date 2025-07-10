@@ -1,9 +1,25 @@
 import docker
+import os
 
 class DockerManager:
-    def __init__(self, image: str = "ubuntu:latest"):
+    def __init__(self, image: str | None = None, volume_host_path: str = "docker_data", dockerfile_path: str = "Dockerfile"):
         self.client = docker.from_env()
-        self.container = self.client.containers.run(image, tty=True, detach=True)
+        self.volume_host_path = os.path.abspath(volume_host_path)
+        os.makedirs(self.volume_host_path, exist_ok=True)
+
+        if image is None:
+            image = "ubuntu-aws-cli:latest"
+            build_path = os.path.dirname(os.path.abspath(dockerfile_path)) or "."
+            dockerfile = os.path.basename(dockerfile_path)
+            self.client.images.build(path=build_path, dockerfile=dockerfile, tag=image)
+
+        self.container = self.client.containers.run(
+            image,
+            tty=True,
+            detach=True,
+            volumes={self.volume_host_path: {"bind": "/data", "mode": "rw"}},
+            environment=dict(os.environ),
+        )
 
     def run_command(self, command: str, stream_callback=None) -> str:
         """Run a command inside the container and return its output.

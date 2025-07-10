@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+import os
 from app.docker_tools import DockerManager
 
 class DummyContainer:
@@ -14,8 +15,41 @@ class DummyContainer:
         pass
 
 class DummyClient:
-    def containers(self):
-        pass
+    def __init__(self):
+        self.built = {}
+
+        class Images:
+            def build(_, path=None, dockerfile=None, tag=None):
+                self.built['path'] = path
+                self.built['dockerfile'] = dockerfile
+                self.built['tag'] = tag
+                return None, None
+
+        self.images = Images()
+        self.containers = None
+
+
+def test_init_passes_env_and_volume(monkeypatch, tmp_path):
+    captured = {}
+
+    class DummyContainers:
+        def run(self, image, tty=True, detach=True, volumes=None, environment=None):
+            captured['image'] = image
+            captured['volumes'] = volumes
+            captured['environment'] = environment
+            return DummyContainer()
+
+    dummy_client = DummyClient()
+    dummy_client.containers = DummyContainers()
+    monkeypatch.setattr('docker.from_env', lambda: dummy_client)
+
+    dm = DockerManager(volume_host_path=tmp_path, dockerfile_path='Dockerfile')
+    assert captured['image'] == 'ubuntu-aws-cli:latest'
+    assert str(tmp_path.resolve()) in captured['volumes']
+    assert captured['environment']['PATH'] == os.environ['PATH']
+    assert dummy_client.built['tag'] == 'ubuntu-aws-cli:latest'
+    assert dummy_client.built['dockerfile'] == 'Dockerfile'
+    dm.stop()
 
 
 def test_run_command(monkeypatch):
