@@ -2,10 +2,16 @@ import json
 import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from .docker_tools import DockerManager
 from .ai_agent import AIAgent
 
 app = FastAPI()
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "..", "frontend")),
+    name="static",
+)
 
 docker_manager = None
 ai_agent = None
