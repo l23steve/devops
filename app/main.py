@@ -58,12 +58,18 @@ async def websocket_endpoint(websocket: WebSocket):
             if msg.get("type") == "chat_message":
                 user_msg = msg.get("content", "")
 
+                loop = asyncio.get_running_loop()
+
                 def stream_cb(text: str):
-                    asyncio.create_task(
-                        websocket.send_text(json.dumps({"type": "terminal_data", "content": text}))
+                    loop.create_task(
+                        websocket.send_text(
+                            json.dumps({"type": "terminal_data", "content": text})
+                        )
                     )
 
-                ai_response = ai_agent.chat(user_msg, stream_callback=stream_cb)
+                ai_response = await asyncio.to_thread(
+                    ai_agent.chat, user_msg, stream_callback=stream_cb
+                )
                 await websocket.send_text(
                     json.dumps({"type": "chat_message", "content": ai_response})
                 )
