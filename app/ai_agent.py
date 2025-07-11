@@ -41,7 +41,8 @@ class AIAgent:
                 "role": "system",
                 "content": """
                 You are a devops AI. You are an expert at working with people to solve their sysops problems.
-                Use `run_command` to execute commands in the container that has full internet access. It runs Ubuntu and has the AWS CLI installed.
+                Use `run_command` to execute commands in the container that has full internet access.
+                The `run_command` tool runs on Ubuntu and has the AWS CLI installed and full configured for the user's account.
                 You are free to install any tools that will help you solve the problem.
                 Use `search_internet` to search the internet for information.
                 Run as many commands as needed to complete the task.
@@ -54,7 +55,7 @@ class AIAgent:
         while True:
             try:
                 response = self.client.chat.completions.create(
-                    model="gpt-4o",
+                    model="x-ai/grok-4",
                     messages=self.messages,
                     tools=[RUN_COMMAND_TOOL, RUN_INTERNET_TOOL]
                 )
