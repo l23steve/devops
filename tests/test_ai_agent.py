@@ -55,7 +55,7 @@ def test_ai_agent_chat_runs_command(monkeypatch):
     response2 = DummyResponse(DummyMessage(content='done'))
     dummy_client = DummyOpenAI([response1, response2])
     monkeypatch.setattr('openai.OpenAI', lambda api_key, base_url=None: dummy_client)
-    agent = AIAgent(dm, api_key='test')
+    agent = AIAgent(dm, None, api_key='test')
     captured = []
 
     def cb(data):
@@ -81,6 +81,6 @@ def test_ai_agent_chat_handles_error(monkeypatch):
             self.chat = type('chat', (), {'completions': ErrorCompletions()})
 
     monkeypatch.setattr('openai.OpenAI', lambda api_key, base_url=None: ErrorClient())
-    agent = AIAgent(dm, api_key='test')
+    agent = AIAgent(dm, None, api_key='test')
     result = agent.chat('hi')
     assert result.startswith('Error communicating with language model')
