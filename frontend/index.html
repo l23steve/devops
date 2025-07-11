@@ -4,47 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevOps AI</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Highlight.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Highlight.js for syntax highlighting - using Atom One Dark theme for terminal -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/bash.min.js"></script> <!-- Explicitly load bash language -->
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* Custom styles for chat bubbles and basic layout */
+        /* Custom styles for chat bubbles and basic layout, adapted for Bootstrap */
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
             height: 100vh;
             display: flex;
             align-items: stretch;
-            background-color: #f3f4f6; /* Tailwind bg-gray-100 */
+            background-color: #f8f9fa; /* Bootstrap bg-light */
         }
 
         #container {
             display: flex;
             width: 100%;
             height: 100vh; /* Ensure container takes full viewport height */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Tailwind shadow-lg */
-            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* Bootstrap shadow */
+            border-radius: 0.5rem; /* Bootstrap rounded-3 */
             overflow: hidden; /* Hide overflow for rounded corners */
         }
 
         #chat {
             width: 40%;
-            border-right: 1px solid #e5e7eb; /* Tailwind border-gray-200 */
+            border-right: 1px solid #dee2e6; /* Bootstrap border-light */
             display: flex;
             flex-direction: column;
-            background-color: #ffffff; /* Tailwind bg-white */
-            padding: 1rem; /* Tailwind p-4 */
+            background-color: #ffffff; /* Bootstrap bg-white */
+            padding: 1rem; /* Bootstrap p-4 */
         }
 
         #chat-log {
             flex: 1;
-            padding: 0.5rem; /* Tailwind p-2 */
+            padding: 0.5rem; /* Bootstrap p-2 */
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 1rem; /* Tailwind space-y-4 */
+            gap: 1rem; /* Spacing between messages */
             scroll-behavior: smooth;
         }
 
@@ -55,9 +58,9 @@
 
         .chat-message {
             max-width: 70%; /* Limit bubble width */
-            padding: 0.75rem 1rem; /* Tailwind p-3 */
-            border-radius: 0.5rem; /* Tailwind rounded-lg */
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Tailwind shadow-sm */
+            padding: 0.75rem 1rem; /* Bootstrap py-2 px-3 */
+            border-radius: 0.5rem; /* Bootstrap rounded */
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Bootstrap shadow-sm */
             word-wrap: break-word; /* Ensure long words break */
         }
 
@@ -66,8 +69,8 @@
         }
 
         .user-message {
-            background-color: #3b82f6; /* Tailwind bg-blue-500 */
-            color: #ffffff; /* Tailwind text-white */
+            background-color: #0d6efd; /* Bootstrap primary color */
+            color: #ffffff; /* Bootstrap text-white */
         }
 
         .ai-message-container {
@@ -75,13 +78,46 @@
         }
 
         .ai-message {
-            background-color: #e5e7eb; /* Tailwind bg-gray-200 */
-            color: #1f2937; /* Tailwind text-gray-800 */
+            background-color: #e9ecef; /* Bootstrap secondary-bg-subtle */
+            color: #212529; /* Bootstrap text-dark */
+        }
+
+        /* Markdown specific styling within chat bubbles */
+        .chat-message pre {
+            background-color: rgba(0, 0, 0, 0.1); /* Slightly darker background for code blocks */
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            overflow-x: auto; /* Allow horizontal scrolling for long code lines */
+            font-size: 0.8em;
+            color: inherit; /* Inherit text color from parent bubble */
+        }
+
+        .chat-message code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+
+        .chat-message a {
+            color: #007bff; /* Bootstrap link color */
+            text-decoration: underline;
+        }
+
+        .chat-message strong {
+            font-weight: bold;
+        }
+
+        .chat-message em {
+            font-style: italic;
+        }
+
+        .chat-message ul, .chat-message ol {
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
         }
 
         #chat-input {
             border: none;
-            border-top: 1px solid #e5e7eb; /* Tailwind border-gray-200 */
+            border-top: 1px solid #dee2e6; /* Bootstrap border-light */
             padding: 1rem;
             font-size: 1em;
             width: 100%;
@@ -91,29 +127,35 @@
         }
 
         #chat-input:focus {
-            border-color: #3b82f6; /* Tailwind border-blue-500 */
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); /* Tailwind focus:ring-2 focus:ring-blue-500 */
+            border-color: #86b7fe; /* Bootstrap form-control:focus border color */
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Bootstrap form-control:focus shadow */
         }
 
         #terminal {
             width: 60%;
-            background-color: #1f2937; /* Dark background for terminal */
-            color: #34d399; /* Green text for terminal (Tailwind text-green-400) */
+            background-color: #212529; /* Bootstrap dark background */
+            color: #28a745; /* Bootstrap success color */
             padding: 1rem;
             overflow-y: auto;
-            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            border-radius: 0.5rem; /* Bootstrap rounded-3 */
         }
 
         #terminal-log {
             white-space: pre-wrap; /* Preserve whitespace and wrap text */
             font-family: 'JetBrains Mono', 'Fira Code', monospace; /* Monospace font for terminal */
-            font-size: 0.875rem; /* Tailwind text-sm */
+            font-size: 0.875rem; /* Bootstrap font-size-sm */
             line-height: 1.5;
             scroll-behavior: smooth;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
+        /* Highlight.js overrides for better terminal prompt visibility */
+        .hljs-variable.language_ { /* Targets the prompt in bash highlighting */
+            color: #e06c75; /* A distinct color for the prompt, e.g., red */
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments for Bootstrap's grid system */
+        @media (max-width: 767.98px) { /* Bootstrap's 'md' breakpoint */
             #container {
                 flex-direction: column;
                 height: auto; /* Allow height to adjust on small screens */
@@ -122,7 +164,7 @@
             #chat, #terminal {
                 width: 100%;
                 border-right: none;
-                border-bottom: 1px solid #e5e7eb;
+                border-bottom: 1px solid #dee2e6;
                 border-radius: 0.5rem 0.5rem 0 0; /* Rounded top corners for chat */
             }
 
@@ -138,20 +180,33 @@
         <div id="chat-log">
             <!-- Chat messages will be appended here -->
         </div>
-        <input type="text" id="chat-input" placeholder="Type a message..." class="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-b-lg">
+        <input type="text" id="chat-input" placeholder="Type a message..." class="form-control rounded-bottom">
     </div>
     <div id="terminal">
         <pre><code id="terminal-log" class="language-bash"></code></pre>
     </div>
 </div>
 
+<!-- Bootstrap JS CDN (Popper.js and Bootstrap Bundle) -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" xintegrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" xintegrity="sha384-0pUGZvbkm6XF6gxjEnlcoVSIDjFzixFNtnefBAgUPfBwJqxKWSx0x4f+hWAf7bQ" crossorigin="anonymous"></script>
+
 <script>
     const ws = new WebSocket(`ws://${location.host}/ws`);
     const chatInput = document.getElementById('chat-input');
     const chatLog = document.getElementById('chat-log');
     const terminalLog = document.getElementById('terminal-log');
-    let terminalContent = '';
-    hljs.highlightAll();
+    let terminalContent = ''; // Stores raw terminal content for highlighting
+
+    // Configure Marked.js to use Highlight.js for code blocks
+    marked.setOptions({
+        highlight: function(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+            return hljs.highlight(code, { language }).value;
+        },
+        breaks: true, // Allow GFM line breaks
+        gfm: true, // Use GitHub Flavored Markdown
+    });
 
     // Function to append message to chat log
     function appendChatMessage(content, isUser) {
@@ -162,7 +217,8 @@
         const messageBubble = document.createElement('div');
         messageBubble.classList.add('chat-message');
         messageBubble.classList.add(isUser ? 'user-message' : 'ai-message');
-        messageBubble.textContent = content;
+        // Use marked.parse to render Markdown content
+        messageBubble.innerHTML = marked.parse(content);
 
         messageContainer.appendChild(messageBubble);
         chatLog.appendChild(messageContainer);
@@ -177,6 +233,7 @@
         } else if (msg.type === 'terminal_data') {
             // Terminal data
             terminalContent += msg.content;
+            // Apply highlighting and update innerHTML
             terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
             terminalLog.scrollTop = terminalLog.scrollHeight; // Scroll to the bottom
         }
@@ -197,20 +254,24 @@
     // Handle WebSocket connection open and close
     ws.onopen = () => {
         console.log('WebSocket connection established.');
-        // Optional: Send an initial message or status
-        // appendChatMessage('Connected to DevOps AI.', false);
+        // Initial message in terminal
+        terminalContent += 'DevOps AI Terminal Ready.\n';
+        terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
+        terminalLog.scrollTop = terminalLog.scrollHeight;
     };
 
     ws.onclose = () => {
         console.log('WebSocket connection closed.');
-        // Optional: Display a message about disconnection
-        // appendChatMessage('Disconnected from DevOps AI. Please refresh to reconnect.', false);
+        terminalContent += '\nDisconnected from DevOps AI. Please refresh to reconnect.\n';
+        terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
+        terminalLog.scrollTop = terminalLog.scrollHeight;
     };
 
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        // Optional: Display an error message
-        // appendChatMessage('WebSocket error occurred. Check console for details.', false);
+        terminalContent += `\nWebSocket error occurred: ${error.message || 'Unknown error'}.\n`;
+        terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
+        terminalLog.scrollTop = terminalLog.scrollHeight;
     };
 </script>
 </body>
