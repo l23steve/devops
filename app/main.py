@@ -24,7 +24,7 @@ ai_agent = None
 @app.on_event("startup")
 def startup_event():
     global docker_manager, ai_agent
-    api_key = os.getenv("OPENROUTER_API_KEY", "test")
+    api_key = os.getenv("OPENAI_KEY", "test")
     try:
         docker_manager = DockerManager()
         internet_tools = WebSearchTool(api_key=api_key)
@@ -57,6 +57,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
             if msg.get("type") == "chat_message":
                 user_msg = msg.get("content", "")
+                print(f"Received message: {user_msg}")
 
                 loop = asyncio.get_running_loop()
 
