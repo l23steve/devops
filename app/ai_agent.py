@@ -7,7 +7,7 @@ def make_id(prefix):
     return f"{prefix}_{uuid.uuid4().hex}"
 
 def append_function_call(messages, call):
-    call_id = make_id("fc")
+    call_id = getattr(call, "id", None) or make_id("fc")
     messages.append({
         "type": "function_call",
         "call_id": call_id,
@@ -18,7 +18,12 @@ def append_function_call(messages, call):
     messages.append({
         "type": "reasoning",
         "id": reasoning_id,
-        "summary": f"Explains why {call.name} is being called"  # Only here!
+        "summary": [
+            {
+                "type": "summary_text",
+                "text": f"Explains why {call.name} is being called",
+            }
+        ],
     })
     return call_id
 
@@ -31,12 +36,23 @@ def append_function_call_output(messages, call_id, call, output):
         "name": call.name,
         "output": output,
     })
+    messages.append({
+        "type": "message",
+        "role": "tool",
+        "tool_call_id": call_id,
+        "content": output,
+    })
     reasoning_id = make_id("rs")
     messages.append({
         "type": "reasoning",
         "id": reasoning_id,
         "input_message_id": output_id,
-        "summary": f"Explains output for {call.name}"  # Only here!
+        "summary": [
+            {
+                "type": "summary_text",
+                "text": f"Explains output for {call.name}",
+            }
+        ],
     })
     return output_id
 
@@ -129,38 +145,37 @@ class AIAgent:
                     input=self.messages,
                     reasoning={"effort": "medium"},
                     tools=[RUN_COMMAND_TOOL, RUN_INTERNET_TOOL],
-                    store=False
+                    store=False,
                 )
             except openai.OpenAIError as exc:
                 return f"Error communicating with language model: {exc}"
 
-            print(response)
-            if getattr(response, "output", None):
-                message = response.output
-                for call in message:
-                    if call.type != "function_call":
+            for item in getattr(response, "output", []):
+                if item.type == "function_call":
+                    if not self.handle_tool_call(item):
                         continue
 
-                    if not self.handle_tool_call(call):
-                        continue
-                    # Use fixed helper to append with all required fields
-                    call_id = append_function_call(self.messages, call)
-                    call.id = call_id  # For later use
+                    call_id = append_function_call(self.messages, item)
+                    item.id = call_id  # For later use
 
-                    args = json.loads(call.arguments)
-                    print(f"Tool call: {call.name} with args: {args}")
+                    args = json.loads(item.arguments)
 
-                    if call.name == "run_command":
+                    if item.name == "run_command":
                         output = self.docker_manager.run_command(args["command"])
                         if stream_callback:
                             prompt = f"ai@container:~$ {args['command']}\n"
                             stream_callback(prompt + output)
 
-                        append_function_call_output(self.messages, call_id, call, output)
+                        append_function_call_output(self.messages, call_id, item, output)
 
-                    if call.name == "search_internet":
+                    if item.name == "search_internet":
                         output = self.internet_tools.search(args["query"])
-                        append_function_call_output(self.messages, call_id, call, output)
-            else:
-                self.messages.append({"type": "message", "role": "assistant", "content": message.content})
-                return message.content
+                        append_function_call_output(self.messages, call_id, item, output)
+
+                elif item.type == "message" and item.role == "assistant":
+                    text = "".join(
+                        c.text for c in getattr(item, "content", [])
+                        if getattr(c, "type", None) == "output_text"
+                    )
+                    self.messages.append({"type": "message", "role": "assistant", "content": text})
+                    return text
