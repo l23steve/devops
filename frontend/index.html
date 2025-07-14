@@ -12,6 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/bash.min.js"></script> <!-- Explicitly load bash language -->
     <!-- Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Custom styles for chat bubbles and basic layout, adapted for Bootstrap */
         body {
@@ -19,26 +21,43 @@
             margin: 0;
             height: 100vh;
             display: flex;
+            flex-direction: column; /* Changed to column to accommodate header */
             align-items: stretch;
             background-color: #f8f9fa; /* Bootstrap bg-light */
+            overflow: hidden; /* Prevent body scroll when resizing */
+        }
+
+        /* Header Styling */
+        .app-header {
+            background-color: #343a40; /* Bootstrap dark */
+            color: #ffffff;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+            flex-shrink: 0; /* Prevent header from shrinking */
         }
 
         #container {
             display: flex;
+            flex-grow: 1; /* Allow container to take remaining vertical space */
             width: 100%;
-            height: 100vh; /* Ensure container takes full viewport height */
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* Bootstrap shadow */
             border-radius: 0.5rem; /* Bootstrap rounded-3 */
             overflow: hidden; /* Hide overflow for rounded corners */
+            margin-top: 1rem; /* Space below header */
+            margin-bottom: 1rem; /* Space above bottom edge */
         }
 
         #chat {
-            width: 40%;
+            flex-grow: 1; /* Allows chat to grow/shrink */
             border-right: 1px solid #dee2e6; /* Bootstrap border-light */
             display: flex;
             flex-direction: column;
             background-color: #ffffff; /* Bootstrap bg-white */
             padding: 1rem; /* Bootstrap p-4 */
+            min-width: 200px; /* Minimum width for chat */
         }
 
         #chat-log {
@@ -51,9 +70,28 @@
             scroll-behavior: smooth;
         }
 
+        /* Chat message animation */
+        .chat-message-container.fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .chat-message-container {
             display: flex;
             width: 100%;
+            align-items: flex-start; /* Align labels to top of bubble */
+        }
+
+        .chat-message-info {
+            font-size: 0.75rem;
+            color: #6c757d; /* Bootstrap secondary text */
+            margin-bottom: 0.25rem;
+            white-space: nowrap; /* Prevent wrapping for label/timestamp */
+            padding: 0 0.5rem; /* Padding for info */
         }
 
         .chat-message {
@@ -66,6 +104,8 @@
 
         .user-message-container {
             justify-content: flex-end; /* Align user messages to the right */
+            flex-direction: column; /* Stack info above bubble */
+            align-items: flex-end; /* Align info to the right */
         }
 
         .user-message {
@@ -75,6 +115,8 @@
 
         .ai-message-container {
             justify-content: flex-start; /* Align AI messages to the left */
+            flex-direction: column; /* Stack info above bubble */
+            align-items: flex-start; /* Align info to the left */
         }
 
         .ai-message {
@@ -115,14 +157,24 @@
             margin-bottom: 0.5rem;
         }
 
-        #chat-input {
-            border: none;
+        .chat-input-area {
+            display: flex;
+            align-items: center;
             border-top: 1px solid #dee2e6; /* Bootstrap border-light */
-            padding: 1rem;
+            padding-top: 1rem;
+            padding-bottom: 0.5rem;
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            resize: vertical; /* Allow vertical resizing */
+            min-height: 40px; /* Minimum height for textarea */
+            max-height: 150px; /* Maximum height for textarea */
+            border: 1px solid #ced4da; /* Bootstrap form-control border */
+            border-radius: 0.25rem; /* Bootstrap rounded */
+            padding: 0.5rem 0.75rem; /* Bootstrap py-2 px-3 */
             font-size: 1em;
-            width: 100%;
-            outline: none; /* Remove default focus outline */
-            border-radius: 0 0 0.5rem 0.5rem; /* Rounded bottom corners */
+            margin-right: 0.5rem; /* Space between input and button */
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
@@ -131,13 +183,78 @@
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Bootstrap form-control:focus shadow */
         }
 
+        .send-button {
+            height: 40px; /* Match input height */
+            width: 40px; /* Make it square */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem; /* Bootstrap rounded */
+            background-color: #0d6efd; /* Bootstrap primary */
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .send-button:hover {
+            background-color: #0a58ca; /* Darker primary on hover */
+        }
+
+        .typing-indicator {
+            font-size: 0.85rem;
+            color: #6c757d;
+            padding: 0.5rem;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+
+        #splitter {
+            width: 8px; /* Width of the draggable splitter */
+            background-color: #6c757d; /* Bootstrap secondary color */
+            cursor: ew-resize; /* East-west resize cursor */
+            flex-shrink: 0; /* Prevent splitter from shrinking */
+            z-index: 10; /* Ensure splitter is above other elements */
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Light border for dark theme */
+            margin-bottom: 1rem;
+        }
+
+        .terminal-header .btn {
+            background-color: #495057; /* Bootstrap dark secondary */
+            color: #ffffff;
+            border: none;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s;
+        }
+
+        .terminal-header .btn:hover {
+            background-color: #6c757d; /* Darker secondary on hover */
+        }
+
         #terminal {
-            width: 60%;
+            flex-grow: 1; /* Allows terminal to grow/shrink */
             background-color: #212529; /* Bootstrap dark background */
             color: #28a745; /* Bootstrap success color */
             padding: 1rem;
-            overflow-y: auto;
-            border-radius: 0.5rem; /* Bootstrap rounded-3 */
+            overflow-y: auto; /* This is the scrollable container */
+            /* Removed border-radius for sharp corners */
+            min-width: 200px; /* Minimum width for terminal */
+            display: flex;
+            flex-direction: column;
+        }
+
+        #terminal-log-wrapper {
+            flex: 1; /* Allow the pre element to take up remaining space */
+            overflow-y: auto; /* This is the actual scrollable element for terminal content */
         }
 
         #terminal-log {
@@ -146,6 +263,7 @@
             font-size: 0.875rem; /* Bootstrap font-size-sm */
             line-height: 1.5;
             scroll-behavior: smooth;
+            /* The code element itself should not overflow, its parent #terminal handles it */
         }
 
         /* Highlight.js overrides for better terminal prompt visibility */
@@ -153,6 +271,40 @@
             color: #e06c75; /* A distinct color for the prompt, e.g., red */
             font-weight: bold;
         }
+
+        /* Custom Scrollbar Styling (Webkit browsers) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e9ecef; /* Light gray track */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #adb5bd; /* Medium gray thumb */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6c757d; /* Darker gray on hover */
+        }
+
+        /* Terminal scrollbar */
+        #terminal::-webkit-scrollbar-track {
+            background: #343a40; /* Darker track for terminal */
+        }
+
+        #terminal::-webkit-scrollbar-thumb {
+            background: #495057; /* Darker thumb for terminal */
+        }
+
+        #terminal::-webkit-scrollbar-thumb:hover {
+            background: #6c757d; /* Darker gray on hover */
+        }
+
 
         /* Responsive adjustments for Bootstrap's grid system */
         @media (max-width: 767.98px) { /* Bootstrap's 'md' breakpoint */
@@ -171,19 +323,39 @@
             #terminal {
                 border-radius: 0 0 0.5rem 0.5rem; /* Rounded bottom corners for terminal */
             }
+
+            #splitter {
+                display: none; /* Hide splitter on small screens as layout becomes vertical */
+            }
         }
     </style>
 </head>
 <body>
-<div id="container">
+<header class="app-header" role="banner">
+    DevOps AI
+</header>
+<div id="container" role="main">
     <div id="chat">
-        <div id="chat-log">
+        <div id="chat-log" aria-live="polite" aria-atomic="false">
             <!-- Chat messages will be appended here -->
         </div>
-        <input type="text" id="chat-input" placeholder="Type a message..." class="form-control rounded-bottom">
+        <div class="typing-indicator" id="typing-indicator" aria-live="polite" aria-atomic="true">AI is typing...</div>
+        <div class="chat-input-area">
+            <textarea id="chat-input" placeholder="Type a message..." class="form-control" aria-label="Chat input"></textarea>
+            <button id="send-button" class="send-button" aria-label="Send message">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
     </div>
+    <div id="splitter" role="separator" aria-orientation="vertical" aria-valuenow="50" aria-valuemin="20" aria-valuemax="80"></div> <!-- Draggable splitter -->
     <div id="terminal">
-        <pre><code id="terminal-log" class="language-bash"></code></pre>
+        <div class="terminal-header">
+            <span>Terminal Output</span>
+            <button id="clear-terminal-button" class="btn btn-sm" aria-label="Clear terminal output">Clear</button>
+        </div>
+        <div id="terminal-log-wrapper">
+            <pre><code id="terminal-log" class="language-bash"></code></pre>
+        </div>
     </div>
 </div>
 
@@ -194,9 +366,20 @@
 <script>
     const ws = new WebSocket(`ws://${location.host}/ws`);
     const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
     const chatLog = document.getElementById('chat-log');
-    const terminalLog = document.getElementById('terminal-log');
+    const terminalLog = document.getElementById('terminal-log'); // This is the <code> element
+    const terminalPanel = document.getElementById('terminal'); // This is the scrollable <div> for terminal
+    const terminalLogWrapper = document.getElementById('terminal-log-wrapper'); // The new scrollable wrapper for terminal content
+    const clearTerminalButton = document.getElementById('clear-terminal-button');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const chatPanel = document.getElementById('chat');
+    const splitter = document.getElementById('splitter');
+    const container = document.getElementById('container');
+
     let terminalContent = ''; // Stores raw terminal content for highlighting
+    let isDragging = false;
+    let isAITyping = false; // State to manage AI typing indicator
 
     // Configure Marked.js to use Highlight.js for code blocks
     marked.setOptions({
@@ -211,67 +394,164 @@
     // Function to append message to chat log
     function appendChatMessage(content, isUser) {
         const messageContainer = document.createElement('div');
-        messageContainer.classList.add('chat-message-container');
-        messageContainer.classList.add(isUser ? 'user-message-container' : 'ai-message-container');
+        messageContainer.classList.add('chat-message-container', 'fade-in'); // Add fade-in class
+
+        const messageInfo = document.createElement('div');
+        messageInfo.classList.add('chat-message-info');
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // e.g., "03:05 PM"
+        messageInfo.textContent = `${isUser ? 'You' : 'AI'} at ${timeString}`;
 
         const messageBubble = document.createElement('div');
         messageBubble.classList.add('chat-message');
         messageBubble.classList.add(isUser ? 'user-message' : 'ai-message');
-        // Use marked.parse to render Markdown content
         messageBubble.innerHTML = marked.parse(content);
 
-        messageContainer.appendChild(messageBubble);
+        // Append info and bubble based on user/AI
+        if (isUser) {
+            messageContainer.appendChild(messageInfo);
+            messageContainer.appendChild(messageBubble);
+        } else {
+            messageContainer.appendChild(messageInfo);
+            messageContainer.appendChild(messageBubble);
+        }
+
         chatLog.appendChild(messageContainer);
         chatLog.scrollTop = chatLog.scrollHeight; // Scroll to the bottom
+    }
+
+    // Function to scroll terminal to bottom using requestAnimationFrame
+    function scrollTerminalToBottom() {
+        requestAnimationFrame(() => {
+            // Corrected: Scroll the terminalLogWrapper which has overflow-y: auto
+            terminalLogWrapper.scrollTop = terminalLogWrapper.scrollHeight;
+        });
+    }
+
+    // Function to show/hide AI typing indicator
+    function setAITyping(isTyping) {
+        if (isTyping && !isAITyping) {
+            typingIndicator.style.display = 'block';
+            isAITyping = true;
+            chatLog.scrollTop = chatLog.scrollHeight; // Scroll to show indicator
+        } else if (!isTyping && isAITyping) {
+            typingIndicator.style.display = 'none';
+            isAITyping = false;
+        }
     }
 
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.type === 'chat_message') {
-            // AI messages received from WebSocket
+            setAITyping(false); // AI has responded, hide indicator
             appendChatMessage(msg.content, false);
         } else if (msg.type === 'terminal_data') {
-            // Terminal data
             terminalContent += msg.content;
-            // Apply highlighting and update innerHTML
             terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
-            terminalLog.scrollTop = terminalLog.scrollHeight; // Scroll to the bottom
+            scrollTerminalToBottom();
         }
     };
 
-    chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && chatInput.value.trim() !== '') {
-            const text = chatInput.value.trim();
-            // Display user message instantly
-            appendChatMessage(text, true);
-
-            // Send message via WebSocket
+    // Send message function
+    function sendMessage() {
+        const text = chatInput.value.trim();
+        if (text !== '') {
+            appendChatMessage(text, true); // Display user message instantly
             ws.send(JSON.stringify({ type: 'chat_message', content: text }));
             chatInput.value = ''; // Clear input
+            chatInput.style.height = 'auto'; // Reset textarea height
+            setAITyping(true); // Show AI typing indicator
         }
+    }
+
+    chatInput.addEventListener('keydown', (e) => {
+        // Send on Enter, unless Shift+Enter for new line
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent default new line behavior
+            sendMessage();
+        }
+    });
+
+    sendButton.addEventListener('click', sendMessage);
+
+    // Auto-resize textarea height
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = chatInput.scrollHeight + 'px';
+    });
+
+    // Clear terminal button functionality
+    clearTerminalButton.addEventListener('click', () => {
+        terminalContent = '';
+        terminalLog.innerHTML = '';
+        scrollTerminalToBottom();
+        appendChatMessage('Terminal cleared.', false); // Notify in chat
+    });
+
+    // Splitter functionality
+    splitter.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        document.body.style.cursor = 'ew-resize';
+        container.style.userSelect = 'none'; // Prevent text selection during drag
+        container.style.pointerEvents = 'none'; // Prevent interaction with other elements
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        const containerRect = container.getBoundingClientRect();
+        let newChatWidth = e.clientX - containerRect.left;
+
+        // Calculate percentage widths
+        const totalWidth = containerRect.width;
+        let chatPercentage = (newChatWidth / totalWidth) * 100;
+        let terminalPercentage = 100 - chatPercentage;
+
+        // Apply minimum width constraints
+        const minChatWidthPx = 200; // Corresponds to min-width in CSS
+        const minTerminalWidthPx = 200; // Corresponds to min-width in CSS
+
+        if (newChatWidth < minChatWidthPx) {
+            chatPercentage = (minChatWidthPx / totalWidth) * 100;
+            terminalPercentage = 100 - chatPercentage;
+        } else if ((totalWidth - newChatWidth - splitter.offsetWidth) < minTerminalWidthPx) {
+            terminalPercentage = (minTerminalWidthPx / totalWidth) * 100;
+            chatPercentage = 100 - terminalPercentage;
+        }
+
+        chatPanel.style.width = `${chatPercentage}%`;
+        terminalPanel.style.width = `${terminalPercentage}%`;
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        document.body.style.cursor = 'default';
+        container.style.userSelect = 'auto'; // Re-enable text selection
+        container.style.pointerEvents = 'auto'; // Re-enable interaction
     });
 
     // Handle WebSocket connection open and close
     ws.onopen = () => {
         console.log('WebSocket connection established.');
-        // Initial message in terminal
         terminalContent += 'DevOps AI Terminal Ready.\n';
         terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
-        terminalLog.scrollTop = terminalLog.scrollHeight;
+        scrollTerminalToBottom();
     };
 
     ws.onclose = () => {
         console.log('WebSocket connection closed.');
         terminalContent += '\nDisconnected from DevOps AI. Please refresh to reconnect.\n';
         terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
-        terminalLog.scrollTop = terminalLog.scrollHeight;
+        scrollTerminalToBottom();
+        setAITyping(false);
     };
 
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
         terminalContent += `\nWebSocket error occurred: ${error.message || 'Unknown error'}.\n`;
         terminalLog.innerHTML = hljs.highlight(terminalContent, { language: 'bash' }).value;
-        terminalLog.scrollTop = terminalLog.scrollHeight;
+        scrollTerminalToBottom();
+        setAITyping(false);
     };
 </script>
 </body>

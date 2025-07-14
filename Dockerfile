@@ -5,4 +5,6 @@ RUN apt-get update && \
     pip3 install --no-cache-dir awscli && \
     rm -rf /var/lib/apt/lists/*
 
+COPY id_rsa /root/.ssh/id_rsa
+
 WORKDIR /data
