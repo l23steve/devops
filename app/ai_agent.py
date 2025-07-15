@@ -21,7 +21,7 @@ def append_function_call(messages, call, summary=None):
         {
             "type": "function_call",
             "call_id": call_id,
-            "name": call.name,
+            "name": call.name, # Required
             "arguments": call.arguments,
         }
     )
@@ -31,13 +31,13 @@ def append_function_call(messages, call, summary=None):
         or getattr(call, "summary", None)
         or f"The tool '{call.name}' was invoked"
     )
-    messages.append(
+    """ messages.append(
         {
             "type": "reasoning",
             "id": reasoning_id,
             "summary": _normalize_summary(summary_text),
         }
-    )
+    ) """
     return call_id
 
 
@@ -48,30 +48,20 @@ def append_function_call_output(messages, call_id, call, output, summary=None):
             "type": "function_call_output",
             "id": output_id,
             "call_id": call_id,
-            "name": call.name,
             "output": output,
-        }
-    )
-    messages.append(
-        {
-            "type": "message",
-            "role": "tool",
-            "tool_call_id": call_id,
-            "content": output,
         }
     )
     reasoning_id = make_id("rs")
     summary_text = (
         summary or getattr(call, "output_summary", None) or f"Output for '{call.name}'"
     )
-    messages.append(
+    """ messages.append(
         {
             "type": "reasoning",
             "id": reasoning_id,
-            "input_message_id": output_id,
             "summary": _normalize_summary(summary_text),
         }
-    )
+    ) """
     return output_id
 
 
@@ -124,6 +114,7 @@ class AIAgent:
                 The `run_command` tool runs on Ubuntu and has the AWS CLI installed and full configured for the user's account.
                 You have the SSH key necessary to access any EC2 resources.
                 To access any RDS or Opensearch resources, you will need to SSH into the EC2 instance and run commands there.
+                AWS Secrets Manager is available to retrieve secrets.
                 You are free to install any tools that will help you solve the problem.
                 Use `search_internet` to search the internet for information.
                 Run as many commands as needed to complete the task.
@@ -194,6 +185,8 @@ class AIAgent:
                     item.id = call_id  # For later use
 
                     args = json.loads(item.arguments)
+
+                    print(f"Tool call: {item.name} with args: {args}")
 
                     if item.name == "run_command":
                         output = self.docker_manager.run_command(args["command"])
