@@ -28,7 +28,8 @@ class DockerManager:
         the callback. This allows callers to forward command output while
         retaining the return value for compatibility.
         """
-        exec_result = self.container.exec_run(command, tty=True)
+        # Use a shell to correctly handle compound commands and operators
+        exec_result = self.container.exec_run(["bash", "-lc", command], tty=True)
         output = exec_result.output
         if isinstance(output, bytes):
             output = output.decode()
