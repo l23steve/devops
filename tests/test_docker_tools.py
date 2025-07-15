@@ -72,3 +72,33 @@ def test_run_command_streams(monkeypatch):
     output = dm.run_command('echo test', stream_callback=cb)
     assert output == 'test\n'
     assert captured == ['test\n']
+
+
+def test_run_command_handles_shell_operators(monkeypatch):
+    captured = {}
+
+    class DummyContainerShell:
+        def exec_run(self, command, tty=True, stream=False):
+            captured['command'] = command
+
+            class Result:
+                output = b'test\n'
+
+            return Result()
+
+        def stop(self):
+            pass
+
+        def remove(self):
+            pass
+
+    dm = DockerManager.__new__(DockerManager)
+    dm.client = MagicMock()
+    dm.container = DummyContainerShell()
+
+    output = dm.run_command('echo test && echo done')
+
+    assert captured['command'][0].endswith('bash')
+    assert captured['command'][1] in ('-c', '-lc')
+    assert captured['command'][2] == 'echo test && echo done'
+    assert output == 'test\n'
